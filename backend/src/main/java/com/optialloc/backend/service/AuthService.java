@@ -1,8 +1,11 @@
 package com.optialloc.backend.service;
 
+import com.optialloc.backend.dto.AuthResponse;
 import com.optialloc.backend.dto.LoginRequest;
 import com.optialloc.backend.dto.RegisterRequest;
 import com.optialloc.backend.entity.User;
+import com.optialloc.backend.exception.EmailAlreadyExistsException;
+import com.optialloc.backend.exception.InvalidCredentialsException;
 import com.optialloc.backend.repository.UserRepository;
 import com.optialloc.backend.security.JwtService;
 
@@ -26,56 +29,81 @@ public class AuthService {
         this.jwtService = jwtService;
     }
 
-    public String register(RegisterRequest request) {
+    public AuthResponse register(RegisterRequest request) {
 
-        // Check if email already exists
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already registered");
+        if (request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new IllegalArgumentException("Email is required");
         }
 
-        // Create new user
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+
+        if (request.getName() == null || request.getName().isBlank()) {
+            throw new IllegalArgumentException("Name is required");
+        }
+
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new EmailAlreadyExistsException("Email already registered");
+        }
+
         User user = new User();
 
         user.setName(request.getName());
         user.setEmail(request.getEmail());
 
-        // Encrypt password before storing
         user.setPassword(
                 passwordEncoder.encode(request.getPassword())
         );
 
-        // Set role from registration request
-        user.setRole(request.getRole());
+        // Normal users must be USER.
+        // Do not allow public registration to create ADMIN accounts.
+        user.setRole("USER");
 
-        // Save user in database
         userRepository.save(user);
 
-        // Generate JWT token
-        return jwtService.generateToken(
+        String token = jwtService.generateToken(
                 user.getEmail(),
+                user.getRole()
+        );
+
+        return new AuthResponse(
+                "Registration successful",
+                token,
                 user.getRole()
         );
     }
 
-    public String login(LoginRequest request) {
+    public AuthResponse login(LoginRequest request) {
 
-        // Find user by email
+        if (request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new InvalidCredentialsException("Invalid email or password");
+        }
+
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new InvalidCredentialsException("Invalid email or password");
+        }
+
         User user = userRepository
                 .findByEmail(request.getEmail())
                 .orElseThrow(() ->
-                        new RuntimeException("Invalid email or password"));
+                        new InvalidCredentialsException("Invalid email or password"));
 
-        // Verify password
         if (!passwordEncoder.matches(
                 request.getPassword(),
                 user.getPassword())) {
 
-            throw new RuntimeException("Invalid email or password");
+            throw new InvalidCredentialsException("Invalid email or password");
         }
 
-        // Generate JWT using user's actual database role
-        return jwtService.generateToken(
+        String token = jwtService.generateToken(
                 user.getEmail(),
+                user.getRole()
+        );
+
+        return new AuthResponse(
+                "Login successful",
+                token,
                 user.getRole()
         );
     }

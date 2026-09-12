@@ -7,6 +7,8 @@ import com.optialloc.backend.exception.ResourceUnavailableException;
 import com.optialloc.backend.repository.BookingRepository;
 import com.optialloc.backend.repository.RequestRepository;
 import com.optialloc.backend.repository.ResourceRepository;
+import com.optialloc.backend.status.RequestStatus;
+import com.optialloc.backend.status.ResourceStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,88 +36,84 @@ public class SchedulingService {
         this.conflictDetector = conflictDetector;
     }
 
-@Transactional(noRollbackFor = ResourceUnavailableException.class)
-public Booking scheduleRequest(Long requestId) {
+    @Transactional(noRollbackFor = ResourceUnavailableException.class)
+    public Booking scheduleRequest(Long requestId) {
 
-    Request request = requestRepository.findById(requestId)
-            .orElseThrow(() -> new RuntimeException("Request not found"));
+        Request request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
 
-    List<Resource> resources =
-            resourceRepository.findByStatusAndTypeAndCapacityGreaterThanEqual(
-                    "AVAILABLE",
-                    request.getResourceType(),
-                    request.getCapacityRequired()
+        List<Resource> resources =
+                resourceRepository.findByStatusAndTypeAndCapacityGreaterThanEqual(
+                        ResourceStatus.AVAILABLE,
+                        request.getResourceType(),
+                        request.getCapacityRequired()
+                );
+
+        List<Resource> availableResources = resources.stream()
+                .filter(resource ->
+                        !conflictDetector.hasConflict(
+                                resource,
+                                request.getStartTime(),
+                                request.getEndTime()
+                        ))
+                .toList();
+
+        if (availableResources.isEmpty()) {
+            request.setStatus(RequestStatus.CONFLICT);
+            requestRepository.save(request);
+
+            throw new ResourceUnavailableException(
+                    "No suitable resource available for the requested time"
             );
+        }
 
-    List<Resource> availableResources = resources.stream()
-            .filter(resource ->
-                    !conflictDetector.hasConflict(
-                            resource,
-                            request.getStartTime(),
-                            request.getEndTime()
-                    ))
-            .toList();
+        Resource bestResource = availableResources.stream()
+                .min(
+                        Comparator
+                                .comparingInt((Resource resource) ->
+                                        resource.getCapacity() - request.getCapacityRequired()
+                                )
+                                .thenComparingLong(resource ->
+                                        bookingRepository.countByResourceAndStatus(
+                                                resource,
+                                                "CONFIRMED"
+                                        )
+                                )
+                )
+                .orElseThrow();
 
-    if (availableResources.isEmpty()) {
-        request.setStatus("REJECTED");
+        Resource lockedResource = resourceRepository
+                .findByIdForUpdate(bestResource.getId())
+                .orElseThrow(() -> new RuntimeException("Resource not found"));
+
+        boolean conflict = conflictDetector.hasConflict(
+                lockedResource,
+                request.getStartTime(),
+                request.getEndTime()
+        );
+
+        if (conflict) {
+            request.setStatus(RequestStatus.CONFLICT);
+            requestRepository.save(request);
+
+            throw new ResourceUnavailableException(
+                    "Resource became unavailable during scheduling"
+            );
+        }
+
+        Booking booking = new Booking(
+                request,
+                lockedResource,
+                request.getStartTime(),
+                request.getEndTime(),
+                "CONFIRMED"
+        );
+
+        request.setStatus(RequestStatus.ALLOCATED);
         requestRepository.save(request);
 
-        throw new ResourceUnavailableException(
-                "No suitable resource available for the requested time"
-        );
+        return bookingRepository.save(booking);
     }
-
-    Resource bestResource = availableResources.stream()
-            .min(
-                    Comparator
-                            .comparingInt((Resource resource) ->
-                                    resource.getCapacity()
-                                            - request.getCapacityRequired()
-                            )
-                            .thenComparingLong(resource ->
-                                    bookingRepository.countByResourceAndStatus(
-                                            resource,
-                                            "CONFIRMED"
-                                    )
-                            )
-            )
-            .orElseThrow();
-
-    // Lock the selected resource before the final conflict check
-    Resource lockedResource = resourceRepository
-            .findByIdForUpdate(bestResource.getId())
-            .orElseThrow(() ->
-                    new RuntimeException("Resource not found"));
-
-    // Re-check conflict after acquiring the database lock
-    boolean conflict = conflictDetector.hasConflict(
-            lockedResource,
-            request.getStartTime(),
-            request.getEndTime()
-    );
-
-    if (conflict) {
-        request.setStatus("REJECTED");
-        requestRepository.save(request);
-
-        throw new ResourceUnavailableException(
-                "Resource became unavailable during scheduling"
-        );
-    }
-
-    Booking booking = new Booking(
-            request,
-            lockedResource,
-            request.getStartTime(),
-            request.getEndTime(),
-            "CONFIRMED"
-    );
-
-    request.setStatus("ALLOCATED");
-    requestRepository.save(request);
-
-    return bookingRepository.save(booking);
-}
 
     public List<Booking> schedulePendingRequests() {
 
@@ -123,7 +121,7 @@ public Booking scheduleRequest(Long requestId) {
                 requestRepository.findAll()
                         .stream()
                         .filter(request ->
-                                "PENDING".equals(request.getStatus()))
+                                RequestStatus.PENDING.equals(request.getStatus()))
                         .sorted(
                                 Comparator.comparing(
                                         Request::getPriority
@@ -136,9 +134,7 @@ public Booking scheduleRequest(Long requestId) {
         for (Request request : pendingRequests) {
 
             try {
-                Booking booking =
-                        scheduleRequest(request.getId());
-
+                Booking booking = scheduleRequest(request.getId());
                 bookings.add(booking);
 
             } catch (RuntimeException e) {

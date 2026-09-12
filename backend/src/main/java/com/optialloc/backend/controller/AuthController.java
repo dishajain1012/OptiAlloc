@@ -1,12 +1,12 @@
 package com.optialloc.backend.controller;
 
+import com.optialloc.backend.dto.AuthResponse;
 import com.optialloc.backend.dto.LoginRequest;
 import com.optialloc.backend.dto.RegisterRequest;
 import com.optialloc.backend.service.AuthService;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -19,30 +19,20 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(
+    public ResponseEntity<AuthResponse> register(
             @RequestBody RegisterRequest request) {
 
-        String token = authService.register(request);
-
         return ResponseEntity.ok(
-                Map.of(
-                        "message", "Registration successful",
-                        "token", token
-                )
+                authService.register(request)
         );
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(
+    public ResponseEntity<AuthResponse> login(
             @RequestBody LoginRequest request) {
 
-        String token = authService.login(request);
-
         return ResponseEntity.ok(
-                Map.of(
-                        "message", "Login successful",
-                        "token", token
-                )
+                authService.login(request)
         );
     }
 }

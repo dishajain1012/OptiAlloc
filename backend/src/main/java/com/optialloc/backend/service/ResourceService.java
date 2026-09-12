@@ -2,6 +2,7 @@ package com.optialloc.backend.service;
 
 import com.optialloc.backend.entity.Resource;
 import com.optialloc.backend.repository.ResourceRepository;
+import com.optialloc.backend.status.ResourceStatus;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ public class ResourceService {
 
     @CacheEvict(value = "resources", allEntries = true)
     public Resource createResource(Resource resource) {
+        validateResource(resource);
         return resourceRepository.save(resource);
     }
 
@@ -43,6 +45,8 @@ public class ResourceService {
                 .orElseThrow(() ->
                         new RuntimeException("Resource not found"));
 
+        validateResource(updatedResource);
+
         existingResource.setName(updatedResource.getName());
         existingResource.setType(updatedResource.getType());
         existingResource.setCapacity(updatedResource.getCapacity());
@@ -58,5 +62,33 @@ public class ResourceService {
     )
     public void deleteResource(Long id) {
         resourceRepository.deleteById(id);
+    }
+
+    private void validateResource(Resource resource) {
+        if (resource == null) {
+            throw new IllegalArgumentException("Resource is required");
+        }
+
+        if (resource.getName() == null || resource.getName().isBlank()) {
+            throw new IllegalArgumentException("Resource name is required");
+        }
+
+        if (resource.getType() == null || resource.getType().isBlank()) {
+            throw new IllegalArgumentException("Resource type is required");
+        }
+
+        if (resource.getCapacity() == null || resource.getCapacity() <= 0) {
+            throw new IllegalArgumentException("Capacity must be greater than zero");
+        }
+
+        String normalizedStatus = resource.getStatus() == null
+                ? ResourceStatus.AVAILABLE
+                : resource.getStatus().trim().toUpperCase();
+
+        if (!ResourceStatus.isValid(normalizedStatus)) {
+            throw new IllegalArgumentException("Resource status must be AVAILABLE, MAINTENANCE, or INACTIVE");
+        }
+
+        resource.setStatus(normalizedStatus);
     }
 }

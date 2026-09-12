@@ -30,6 +30,11 @@ public class Request {
     @Column(nullable = false)
     private String status;
 
+    // Resource automatically allocated to this request
+    @ManyToOne
+    @JoinColumn(name = "allocated_resource_id")
+    private Resource allocatedResource;
+
     public Request() {
     }
 
@@ -99,4 +104,13 @@ public class Request {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    public Resource getAllocatedResource() {
+        return allocatedResource;
+    }
+
+    public void setAllocatedResource(Resource allocatedResource) {
+        this.allocatedResource = allocatedResource;
+    }
 }
+
