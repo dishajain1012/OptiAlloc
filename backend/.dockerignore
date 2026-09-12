@@ -1,0 +1,6 @@
+target/
+.git/
+.gitignore
+*.log
+testexit.txt
+testlog.txt

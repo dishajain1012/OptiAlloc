@@ -7,6 +7,7 @@ import com.optialloc.backend.repository.UserRepository;
 import com.optialloc.backend.status.ResourceStatus;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -15,6 +16,9 @@ public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final ResourceRepository resourceRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${optialloc.seed.demo-data:true}")
+    private boolean seedDemoData;
 
     public DataInitializer(
             UserRepository userRepository,
@@ -28,6 +32,9 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        if (!seedDemoData) {
+            return;
+        }
         // Ensure test user exists with correct encoded password
         userRepository.findByEmail("test123@gmail.com").ifPresentOrElse(
                 user -> {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../services/api";
 
 function MyAllocationsPage() {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ function MyAllocationsPage() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:8080/api/bookings", {
+      const response = await fetch(`${API_BASE_URL}/api/bookings`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../services/api";
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ function AdminDashboard() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:8080/api/admin/stats", {
+      const response = await fetch(`${API_BASE_URL}/api/admin/stats`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,

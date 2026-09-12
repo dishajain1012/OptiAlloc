@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../services/api";
 
 function UserDashboard() {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ function UserDashboard() {
     const fetchRequests = async () => {
       try {
         const response = await fetch(
-          "http://localhost:8080/api/requests",
+          `${API_BASE_URL}/api/requests`,
           {
             method: "GET",
             headers: {

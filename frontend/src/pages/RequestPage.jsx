@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../services/api";
 
 function RequestPage() {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ function RequestPage() {
 
     try {
       const response = await fetch(
-        "http://localhost:8080/api/requests",
+        `${API_BASE_URL}/api/requests`,
         {
           method: "POST",
           headers: {

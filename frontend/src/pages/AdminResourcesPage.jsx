@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../services/api";
 
 function AdminResourcesPage() {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ function AdminResourcesPage() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:8080/api/resources", {
+      const response = await fetch(`${API_BASE_URL}/api/resources`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -130,8 +131,8 @@ function AdminResourcesPage() {
 
     const isEdit = !!editingResource;
     const url = isEdit
-      ? `http://localhost:8080/api/resources/${editingResource.id}`
-      : "http://localhost:8080/api/resources";
+      ? `${API_BASE_URL}/api/resources/${editingResource.id}`
+      : `${API_BASE_URL}/api/resources`;
     const method = isEdit ? "PUT" : "POST";
 
     try {
@@ -164,7 +165,7 @@ function AdminResourcesPage() {
     setSuccessMsg("");
 
     try {
-      const response = await fetch(`http://localhost:8080/api/resources/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/resources/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

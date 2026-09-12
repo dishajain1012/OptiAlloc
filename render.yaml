@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: optialloc-backend
+    env: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    plan: free
+    region: singapore
+    envVars:
+      - key: OPTIALLOC_DB_URL
+        fromDatabase:
+          name: optialloc-db
+          property: connectionString
+      - key: OPTIALLOC_JWT_SECRET
+        generateValue: true
+      - key: OPTIALLOC_FRONTEND_URL
+        value: https://optialloc.vercel.app
+      - key: OPTIALLOC_SEED_DEMO_DATA
+        value: "true"
+
+databases:
+  - name: optialloc-db
+    plan: free
+    region: singapore
+    databaseName: optialloc
+    user: optialloc_user

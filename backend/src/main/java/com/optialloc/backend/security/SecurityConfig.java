@@ -17,11 +17,18 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import org.springframework.beans.factory.annotation.Value;
+
+import java.util.ArrayList;
+
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Value("${optialloc.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
@@ -37,12 +44,30 @@ public class SecurityConfig {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(
-                List.of("http://localhost:5173")
-        );
+        List<String> allowedOrigins = new ArrayList<>(List.of(
+                "http://localhost:5173",
+                "http://localhost:3000",
+                "http://127.0.0.1:5173"
+        ));
+
+        if (frontendUrl != null && !frontendUrl.isBlank()) {
+            String cleanUrl = frontendUrl.trim().replaceAll("/+$", "");
+            if (!allowedOrigins.contains(cleanUrl)) {
+                allowedOrigins.add(cleanUrl);
+            }
+        }
+
+        configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "https://*.vercel.app",
+                "https://*.onrender.com"
+        ));
+
+        configuration.setAllowedOrigins(allowedOrigins);
 
         configuration.setAllowedMethods(
-                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH")
         );
 
         configuration.setAllowedHeaders(

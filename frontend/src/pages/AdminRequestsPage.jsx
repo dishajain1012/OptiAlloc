@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../services/api";
 
 function AdminRequestsPage() {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ function AdminRequestsPage() {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:8080/api/admin/requests", {
+      const response = await fetch(`${API_BASE_URL}/api/admin/requests`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,

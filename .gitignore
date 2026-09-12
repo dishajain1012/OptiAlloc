@@ -29,5 +29,6 @@ dist/
 frontend/node_modules/
 frontend/dist/
 
-# Backup archives
+# Backup archives & documents
 *.zip
+*.docx
