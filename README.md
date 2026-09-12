@@ -22,7 +22,39 @@ Resource allocation in organizations (such as booking conference rooms, lab equi
 
 ---
 
-## 2. Key Features
+## 2. Quick Access & Credentials
+
+### Default Accounts & Access
+
+| Account Type | Email | Password | Assigned Role | Default Landing Page |
+|---|---|---|---|---|
+| **Administrator** | `admin@optialloc.com` | `admin123` | `ADMIN` | `/admin` (Admin Dashboard) |
+| **Regular User** | `test123@gmail.com` | `123456` | `USER` | `/dashboard` (User Dashboard) |
+
+### Application Access URLs
+
+#### Local Development Environment
+* **Frontend Web Application**: [http://localhost:5173](http://localhost:5173)
+* **Backend REST API**: [http://localhost:8080](http://localhost:8080)
+* **Interactive Swagger UI**: [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+* **OpenAPI v3 Specification**: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+
+#### Live Production Environment (Vercel & Render)
+* **Live Web Application (Vercel)**: `https://<your-project-name>.vercel.app`
+* **Live Backend API (Render)**: `https://<your-backend-name>.onrender.com`
+* **Live Interactive Swagger UI**: `https://<your-backend-name>.onrender.com/swagger-ui/index.html`
+
+### Admin Management Routes
+
+| Route | Page Name | Features & Permissions |
+|---|---|---|
+| `/admin` | **Admin Dashboard** | System-wide metrics (Total Resources, Available, Maintenance, Total Requests, Allocated, Pending, Conflicts). |
+| `/admin/resources` | **Resource Management** | Full CRUD control (Create, Edit, Delete, change status `AVAILABLE`/`MAINTENANCE`/`DECOMMISSIONED`). |
+| `/admin/requests` | **System Requests** | Global read-only view of all resource allocation requests submitted across all users. |
+
+---
+
+## 3. Key Features
 
 ### Authentication & Security
 * **JWT Authentication**: Stateless authentication using JSON Web Tokens.
