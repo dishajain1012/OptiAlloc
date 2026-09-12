@@ -1,19 +1,13 @@
 # Multi-stage Docker build for OptiAlloc Spring Boot Backend
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM maven:3.9.6-eclipse-temurin-21-alpine AS builder
 WORKDIR /app
 
-# Copy Maven Wrapper & POM
-COPY mvnw .
-COPY .mvn .mvn
+# Copy pom.xml and source files
 COPY pom.xml .
-
-# Download dependencies (cached layer)
-RUN chmod +x ./mvnw
-RUN ./mvnw dependency:go-offline -B || true
-
-# Copy source files and build application package
 COPY src src
-RUN ./mvnw clean package -DskipTests
+
+# Package application JAR skipping unit tests (tests are verified in CI/dev)
+RUN mvn clean package -DskipTests
 
 # Runtime stage
 FROM eclipse-temurin:21-jre-alpine
@@ -22,11 +16,11 @@ WORKDIR /app
 # Copy built JAR artifact from builder stage
 COPY --from=builder /app/target/*.jar app.jar
 
-# Expose internal port 8080
-EXPOSE 8080
+# Expose internal ports (8080 default, 10000 Render default)
+EXPOSE 8080 10000
 
 # Environment variable default for Render PORT
-ENV PORT=8080
+ENV PORT=10000
 
-# Run Spring Boot Application
-ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-8080} -jar app.jar"]
+# Run Spring Boot Application binding to ${PORT}
+ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-10000} -jar app.jar"]
