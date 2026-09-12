@@ -3,9 +3,11 @@ package com.optialloc.backend;
 import com.optialloc.backend.entity.Booking;
 import com.optialloc.backend.entity.Request;
 import com.optialloc.backend.entity.Resource;
+import com.optialloc.backend.entity.User;
 import com.optialloc.backend.repository.BookingRepository;
 import com.optialloc.backend.repository.RequestRepository;
 import com.optialloc.backend.repository.ResourceRepository;
+import com.optialloc.backend.repository.UserRepository;
 import com.optialloc.backend.scheduler.SchedulingService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,16 +32,23 @@ class ConcurrencyTest {
     private ResourceRepository resourceRepository;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private RequestRepository requestRepository;
 
     @Autowired
     private BookingRepository bookingRepository;
+
+    private User testUser;
 
     // Unique resource type for every test execution
     private String concurrencyResourceType;
 
     @BeforeEach
     void setup() {
+
+        testUser = userRepository.save(new User("Concurrency Test User", "concurrency-" + UUID.randomUUID() + "@example.com", "secret123", "USER"));
 
         // Create a unique resource type for this test run
         concurrencyResourceType =
@@ -79,6 +88,7 @@ class ConcurrencyTest {
                 concurrencyResourceType,
                 "PENDING"
         );
+        request1.setUser(testUser);
 
         // ==============================
         // CREATE REQUEST 2
@@ -92,6 +102,7 @@ class ConcurrencyTest {
                 concurrencyResourceType,
                 "PENDING"
         );
+        request2.setUser(testUser);
 
         request1 = requestRepository.save(request1);
         request2 = requestRepository.save(request2);

@@ -2,10 +2,12 @@ package com.optialloc.backend;
 
 import com.optialloc.backend.entity.Request;
 import com.optialloc.backend.entity.Resource;
+import com.optialloc.backend.entity.User;
 import com.optialloc.backend.exception.ResourceUnavailableException;
 import com.optialloc.backend.repository.BookingRepository;
 import com.optialloc.backend.repository.RequestRepository;
 import com.optialloc.backend.repository.ResourceRepository;
+import com.optialloc.backend.repository.UserRepository;
 import com.optialloc.backend.scheduler.SchedulingService;
 import com.optialloc.backend.service.AllocationService;
 import com.optialloc.backend.service.RequestService;
@@ -45,6 +47,16 @@ class Phase2StatusContractTest {
     @Autowired
     private BookingRepository bookingRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    private User testUser;
+
+    @org.junit.jupiter.api.BeforeEach
+    void initUser() {
+        testUser = userRepository.save(new User("Phase 2 User", "phase2-" + UUID.randomUUID() + "@example.com", "secret123", "USER"));
+    }
+
     @Test
     void availableResourceCanBeAllocatedAndKeepsResourceStatusAvailable() {
         String type = "PHASE2_AVAILABLE_" + UUID.randomUUID();
@@ -64,6 +76,7 @@ class Phase2StatusContractTest {
                 type,
                 RequestStatus.PENDING
         );
+        request.setUser(testUser);
 
         Request allocated = requestService.createRequest(request);
 
@@ -89,6 +102,7 @@ class Phase2StatusContractTest {
                 type,
                 RequestStatus.PENDING
         );
+        request.setUser(testUser);
 
         Request saved = requestRepository.save(request);
         Request allocated = allocationService.allocateRequest(saved.getId());
@@ -102,23 +116,28 @@ class Phase2StatusContractTest {
         String type = "PHASE2_CONFLICT_" + UUID.randomUUID();
         Resource resource = resourceRepository.save(new Resource("Shared Room", type, 12, "B1", ResourceStatus.AVAILABLE));
 
-        Request first = requestRepository.save(new Request(
+        Request first = new Request(
                 LocalDateTime.of(2026, 9, 29, 10, 0),
                 LocalDateTime.of(2026, 9, 29, 12, 0),
                 8,
                 1,
                 type,
                 RequestStatus.PENDING
-        ));
+        );
+        first.setUser(testUser);
 
-        Request second = requestRepository.save(new Request(
+        Request second = new Request(
                 LocalDateTime.of(2026, 9, 29, 11, 0),
                 LocalDateTime.of(2026, 9, 29, 13, 0),
                 8,
                 1,
                 type,
                 RequestStatus.PENDING
-        ));
+        );
+        second.setUser(testUser);
+
+        first = requestRepository.save(first);
+        second = requestRepository.save(second);
 
         Request firstAllocated = requestService.createRequest(first);
         assertEquals(RequestStatus.ALLOCATED, firstAllocated.getStatus());
@@ -131,6 +150,7 @@ class Phase2StatusContractTest {
                 second.getResourceType(),
                 RequestStatus.PENDING
         );
+        secondRequest.setUser(testUser);
 
         Request secondAllocated = requestService.createRequest(secondRequest);
         assertEquals(RequestStatus.CONFLICT, secondAllocated.getStatus());
@@ -142,23 +162,28 @@ class Phase2StatusContractTest {
         String type = "PHASE2_BACK_TO_BACK_" + UUID.randomUUID();
         Resource resource = resourceRepository.save(new Resource("Back to Back Room", type, 10, "C1", ResourceStatus.AVAILABLE));
 
-        Request first = requestRepository.save(new Request(
+        Request first = new Request(
                 LocalDateTime.of(2026, 9, 30, 9, 0),
                 LocalDateTime.of(2026, 9, 30, 10, 0),
                 8,
                 1,
                 type,
                 RequestStatus.PENDING
-        ));
+        );
+        first.setUser(testUser);
 
-        Request second = requestRepository.save(new Request(
+        Request second = new Request(
                 LocalDateTime.of(2026, 9, 30, 10, 0),
                 LocalDateTime.of(2026, 9, 30, 11, 0),
                 8,
                 1,
                 type,
                 RequestStatus.PENDING
-        ));
+        );
+        second.setUser(testUser);
+
+        first = requestRepository.save(first);
+        second = requestRepository.save(second);
 
         Request firstAllocated = requestService.createRequest(first);
         Request secondAllocated = requestService.createRequest(second);
@@ -188,6 +213,7 @@ class Phase2StatusContractTest {
                 type,
                 RequestStatus.PENDING
         );
+        request.setUser(testUser);
 
         Request allocated = requestService.createRequest(request);
 

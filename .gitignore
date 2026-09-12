@@ -1,5 +1,6 @@
 # Java / Maven
 target/
+backend/target/
 *.class
 
 # IDE
@@ -7,26 +8,26 @@ target/
 .vscode/
 *.iml
 
-# Logs
+# Logs & Temporary Files
 *.log
+mvn-test-log.txt
+*.ps1
 
 # Environment / secrets
 .env
 .env.*
-
-# Spring local configuration
 application-local.properties
+application-secret.properties
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Node
+# Node / Frontend
 node_modules/
 dist/
-
-# Local Spring configuration
-backend/src/main/resources/application.properties
+frontend/node_modules/
+frontend/dist/
 
 # Backup archives
 *.zip

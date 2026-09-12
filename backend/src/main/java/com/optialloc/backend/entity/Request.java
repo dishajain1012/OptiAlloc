@@ -1,6 +1,11 @@
 package com.optialloc.backend.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 import java.time.LocalDateTime;
 
@@ -12,18 +17,29 @@ public class Request {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @NotNull(message = "Start time is required")
     @Column(nullable = false)
     private LocalDateTime startTime;
 
+    @NotNull(message = "End time is required")
     @Column(nullable = false)
     private LocalDateTime endTime;
 
+    @NotNull(message = "Required capacity is required")
+    @Positive(message = "Capacity must be greater than zero")
     @Column(nullable = false)
     private Integer capacityRequired;
 
+    @NotNull(message = "Priority is required")
+    @Min(value = 1, message = "Priority must be at least 1")
     @Column(nullable = false)
     private Integer priority;
 
+    @NotBlank(message = "Resource type is required")
     @Column(nullable = false)
     private String resourceType;
 
@@ -55,6 +71,14 @@ public class Request {
 
     public Long getId() {
         return id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public LocalDateTime getStartTime() {

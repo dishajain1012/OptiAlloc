@@ -47,56 +47,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = authHeader.substring(7);
 
         try {
+            if (jwtService.isTokenValid(token)) {
+                String email = jwtService.extractEmail(token);
+                Authentication existingAuth = SecurityContextHolder.getContext().getAuthentication();
 
-    System.out.println("JWT FILTER: " + request.getMethod() + " " + request.getRequestURI());
+                if (email != null && existingAuth == null) {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-    if (jwtService.isTokenValid(token)) {
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
+                            );
 
-        System.out.println("JWT VALID");
-
-        String email = jwtService.extractEmail(token);
-
-        System.out.println("JWT EMAIL: " + email);
-
-        Authentication existingAuth =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        System.out.println("EXISTING AUTH: " + existingAuth);
-
-        if (email != null && existingAuth == null) {
-
-            UserDetails userDetails =
-                    userDetailsService.loadUserByUsername(email);
-
-            System.out.println("USER AUTHORITIES: " +
-                    userDetails.getAuthorities());
-
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
+                    authentication.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
                     );
 
-            authentication.setDetails(
-                    new WebAuthenticationDetailsSource()
-                            .buildDetails(request)
-            );
-
-            SecurityContextHolder.getContext()
-                    .setAuthentication(authentication);
-
-            System.out.println("AUTHENTICATION SET");
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+            }
+        } catch (Exception e) {
+            // Cleanly clear security context on invalid/malformed JWT without throwing internal server error
+            SecurityContextHolder.clearContext();
         }
-    } else {
-        System.out.println("JWT INVALID");
-    }
 
-} catch (Exception e) {
-
-    System.out.println("JWT ERROR: " + e.getClass().getName());
-    System.out.println("JWT ERROR MESSAGE: " + e.getMessage());
-}
         filterChain.doFilter(request, response);
     }
 }
